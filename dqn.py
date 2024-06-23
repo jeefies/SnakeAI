@@ -299,7 +299,7 @@ def mainTraining():
                     Qnet.save("Qnet.keras")
                     trainCounts = 0
                 
-                if t and t % 2000 == 0:
+                if t and t % 100 == 0:
                     rwd = np.array(rewardMem)
                     l = len(rewardMem)
                     
@@ -312,6 +312,7 @@ def mainTraining():
                     plt.plot(x, y)
                     plt.plot(x, rwd)
                     plt.show()
+                    plt.pause(0.1)
         
         eps = minEps + (eps - minEps) * np.exp(-decay * eps)
         print("Eps to ", eps)
@@ -319,5 +320,5 @@ def mainTraining():
     env.close()
 
 if __name__ == "__main__":
-    # mainTraining()
-    play()
+    mainTraining()
+    # play()
