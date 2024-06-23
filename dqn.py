@@ -15,12 +15,14 @@ tf.random.set_seed(RAND_SEED)
 random.seed(RAND_SEED)
 np.random.seed(RAND_SEED)
 
+print("SEED: %d" % RAND_SEED)
+
 class Snake:
-    def __init__(self, n = 5, showcase = True, _nearDis = 4):
+    def __init__(self, n = 5, showcase = True, _nearDis = -1):
         self.n = n
         self.showcase = showcase
         self.apple = [-n, -n]
-        self._nearDis = _nearDis
+        self._nearDis = _nearDis if _nearDis > 0 else n
         self.map = np.zeros((n, n))
         self.rand = Random(RAND_SEED)
         self.stateLen = 8 + len(self._nearHead(0, 0, self._nearDis))
@@ -39,7 +41,7 @@ class Snake:
     def _nearHead(self, i, j, k):
         isIn = lambda x, y: 0 <= x < self.n and 0 <= y < self.n
         return [
-            (self.map[x, y] if isIn(x, y) else (-1 if x == self.apple[0] and y == self.apple[1] else 0))
+            ((-1 if x == self.apple[0] and y == self.apple[1] else self.map[x, y]) if isIn(x, y) else self.n * self.n)
                 for x in range(i - k, i + k + 1)
                 for y in range(j - k + abs(i - x), j + k - abs(i - x) + 1)
         ]
@@ -100,7 +102,7 @@ class Snake:
         plt.clf()
         plt.imshow(self.map)
         plt.show(block=False)
-        plt.pause(0.1)
+        plt.pause(0.01)
         # print(self.map)
         self.map[self.apple[0], self.apple[1]] = 0
 
@@ -138,6 +140,10 @@ class Snake:
             self.apple = self.genApple()
             self.time += 2 * n + length
             self.render()
+
+            if self.showcase:
+                print("Eat %d apple !" % length)
+
             return self.state(), (n + length) * n, 0, None, None
         
         self.map = bodyMap
@@ -262,7 +268,8 @@ def mainTraining():
 
             steps += 1
             randPlace = np.random.rand()
-            if randPlace <= eps and steps > 5:
+            # if randPlace <= eps and (steps > 5 or isFirstTime):
+            if randPlace <= eps:
                 action = env.sample()
             else:
                 # print("pred state: ", state)
@@ -292,8 +299,18 @@ def mainTraining():
                     Qnet.save("Qnet.keras")
                     trainCounts = 0
                 
-                if t and t % 1000 == 0:
-                    plt.plot(np.array(rewardMem))
+                if t and t % 2000 == 0:
+                    rwd = np.array(rewardMem)
+                    l = len(rewardMem)
+                    
+                    x = np.arange(0, l, 1)
+                    z = np.polyfit(x, rwd, 3)
+                    p = np.poly1d(z)
+                    y = p(x)
+
+                    plt.ion()
+                    plt.plot(x, y)
+                    plt.plot(x, rwd)
                     plt.show()
         
         eps = minEps + (eps - minEps) * np.exp(-decay * eps)
@@ -302,5 +319,5 @@ def mainTraining():
     env.close()
 
 if __name__ == "__main__":
-    mainTraining()
-    # play()
+    # mainTraining()
+    play()
